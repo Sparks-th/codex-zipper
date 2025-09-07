@@ -1,60 +1,81 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Codex Zipper</title>
-  <meta charset="utf-8">
-  <link rel="stylesheet" href="/api/fetch?file=style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>C0D3X Zipper</title>
   <style>
     /* Loader styles */
-    #app {
+    #loader {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #0d0d0d;
+      color: #fff;
       display: flex;
       align-items: center;
       justify-content: center;
-      height: 100vh;
-      background: #0a0a0a;
+      font-family: monospace;
+      font-size: 1.2rem;
+      z-index: 9999;
     }
 
-    .loader {
-      display: flex;
-      gap: 0.5rem;
-    }
-
-    .dot {
-      width: 10px;
-      height: 10px;
-      background: #00ffcc;
+    .spinner {
+      border: 4px solid rgba(255,255,255,0.1);
+      border-left-color: #00ff99;
       border-radius: 50%;
-      animation: bounce 0.6s infinite alternate;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
     }
 
-    .dot:nth-child(2) { animation-delay: 0.2s; }
-    .dot:nth-child(3) { animation-delay: 0.4s; }
-
-    @keyframes bounce {
-      from { transform: translateY(0); opacity: 0.6; }
-      to   { transform: translateY(-8px); opacity: 1; }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
     }
   </style>
 </head>
 <body>
-  <!-- Loader placeholder -->
-  <div id="app">
-    <div class="loader">
-      <div class="dot"></div>
-      <div class="dot"></div>
-      <div class="dot"></div>
-    </div>
+  <div id="loader">
+    <div class="spinner"></div>
   </div>
-
-  <!-- Proxy-loaded script -->
-  <script src="/api/fetch?file=script.js"></script>
+  <div id="app"></div>
 
   <script>
-    // When script.js is loaded, remove the loader
-    window.addEventListener("load", () => {
-      const loader = document.getElementById("app");
-      if (loader) loader.style.display = "none";
-    });
+    async function loadAssets() {
+      try {
+        // Load CSS (proxied by Vercel, token added server-side)
+        const cssRes = await fetch("/api/fetch?file=style.css");
+        if (!cssRes.ok) throw new Error("CSS fetch failed");
+        const cssText = await cssRes.text();
+        const style = document.createElement("style");
+        style.textContent = cssText;
+        document.head.appendChild(style);
+
+        // Load HTML
+        const htmlRes = await fetch("/api/fetch?file=index.html");
+        if (!htmlRes.ok) throw new Error("HTML fetch failed");
+        const htmlText = await htmlRes.text();
+        document.getElementById("app").innerHTML = htmlText;
+
+        // Load JS
+        const jsRes = await fetch("/api/fetch?file=script.js");
+        if (!jsRes.ok) throw new Error("JS fetch failed");
+        const jsText = await jsRes.text();
+        const script = document.createElement("script");
+        script.textContent = jsText;
+        document.body.appendChild(script);
+      } catch (err) {
+        document.getElementById("app").innerHTML =
+          `<p style="color:red">Failed to load app: ${err.message}</p>`;
+      } finally {
+        // Hide loader
+        document.getElementById("loader").style.display = "none";
+      }
+    }
+
+    loadAssets();
   </script>
 </body>
 </html>
