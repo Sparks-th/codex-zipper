@@ -1,6 +1,5 @@
 // /api/fetch.js
-import fetch from "node-fetch";
-
+const fetch = require("node-fetch");
 const REMOTE_BASE = "http://129.213.89.30:3300"; // Your Python server
 const TOKEN = process.env.RAW_ACCESS_TOKEN;     // Vercel secret env
 
