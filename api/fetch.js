@@ -27,6 +27,7 @@ export default async function handler(req, res) {
 
     if (!upstream.ok) {
       console.log("Upstream fetch failed:", upstream.status);
+   console.log("TOKEN value:", TOKEN); // REMOVE after debugging!
       return res.status(upstream.status).send("Failed to fetch asset");
     }
 
