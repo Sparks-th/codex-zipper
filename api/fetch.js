@@ -7,18 +7,13 @@ export default async function handler(req, res) {
   try {
     const { file } = req.query;
 
-    // 1. Default → serve index.html
-    if (!file) {
-      return res.redirect("/api/fetch?file=index.html");
-    }
-
-    // 2. Only allow whitelisted files (index.html, script.js, style.css)
+    // Whitelist
     const allowed = ["index.html", "script.js", "style.css"];
-    if (!allowed.includes(file)) {
+    if (!file || !allowed.includes(file)) {
       return res.status(403).send("Forbidden");
     }
 
-    // 3. Fetch from Python server with token
+    // Always forward with token
     const upstream = await fetch(`${REMOTE_BASE}/${file}`, {
       headers: { "X-RAW-TOKEN": TOKEN }
     });
@@ -27,7 +22,7 @@ export default async function handler(req, res) {
       return res.status(upstream.status).send("Failed to fetch asset");
     }
 
-    // 4. Set correct content type
+    // Set correct Content-Type
     if (file.endsWith(".js")) {
       res.setHeader("Content-Type", "application/javascript; charset=utf-8");
     } else if (file.endsWith(".css")) {
