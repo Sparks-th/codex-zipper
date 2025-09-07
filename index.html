@@ -4,10 +4,57 @@
   <title>Codex Zipper</title>
   <meta charset="utf-8">
   <link rel="stylesheet" href="/api/fetch?file=style.css">
+  <style>
+    /* Loader styles */
+    #app {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      background: #0a0a0a;
+    }
+
+    .loader {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      background: #00ffcc;
+      border-radius: 50%;
+      animation: bounce 0.6s infinite alternate;
+    }
+
+    .dot:nth-child(2) { animation-delay: 0.2s; }
+    .dot:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes bounce {
+      from { transform: translateY(0); opacity: 0.6; }
+      to   { transform: translateY(-8px); opacity: 1; }
+    }
+  </style>
 </head>
 <body>
-  <div id="app">Loading...</div>
+  <!-- Loader placeholder -->
+  <div id="app">
+    <div class="loader">
+      <div class="dot"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+    </div>
+  </div>
 
+  <!-- Proxy-loaded script -->
   <script src="/api/fetch?file=script.js"></script>
+
+  <script>
+    // When script.js is loaded, remove the loader
+    window.addEventListener("load", () => {
+      const loader = document.getElementById("app");
+      if (loader) loader.style.display = "none";
+    });
+  </script>
 </body>
 </html>
