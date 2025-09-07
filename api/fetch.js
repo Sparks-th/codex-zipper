@@ -7,46 +7,37 @@ export default async function handler(req, res) {
   try {
     const { file } = req.query;
 
-    // 1. If no file specified → serve index.html with injected assets
+    // 1. Default → serve index.html
     if (!file) {
-      const upstream = await fetch(`${REMOTE_BASE}/index.html`);
-      let html = await upstream.text();
+      return res.redirect("/api/fetch?file=index.html");
+    }
 
-      // Inject proxied script + style
-      html = html.replace(
-        "</head>",
-        `  <link rel="stylesheet" href="/api/fetch?file=style.css">
-  <script src="/api/fetch?file=script.js" defer></script>
-</head>`
-      );
+    // 2. Only allow whitelisted files (index.html, script.js, style.css)
+    const allowed = ["index.html", "script.js", "style.css"];
+    if (!allowed.includes(file)) {
+      return res.status(403).send("Forbidden");
+    }
 
+    // 3. Fetch from Python server with token
+    const upstream = await fetch(`${REMOTE_BASE}/${file}`, {
+      headers: { "X-RAW-TOKEN": TOKEN }
+    });
+
+    if (!upstream.ok) {
+      return res.status(upstream.status).send("Failed to fetch asset");
+    }
+
+    // 4. Set correct content type
+    if (file.endsWith(".js")) {
+      res.setHeader("Content-Type", "application/javascript; charset=utf-8");
+    } else if (file.endsWith(".css")) {
+      res.setHeader("Content-Type", "text/css; charset=utf-8");
+    } else if (file.endsWith(".html")) {
       res.setHeader("Content-Type", "text/html; charset=utf-8");
-      return res.status(200).send(html);
     }
 
-    // 2. Only allow script.css / style.js through proxy with token
-    if (file === "script.js" || file === "style.css") {
-      const upstream = await fetch(`${REMOTE_BASE}/${file}`, {
-        headers: { "X-RAW-TOKEN": TOKEN }
-      });
-
-      if (!upstream.ok) {
-        return res.status(upstream.status).send("Failed to fetch asset");
-      }
-
-      res.setHeader(
-        "Content-Type",
-        file.endsWith(".js")
-          ? "application/javascript; charset=utf-8"
-          : "text/css; charset=utf-8"
-      );
-
-      const body = await upstream.text();
-      return res.status(200).send(body);
-    }
-
-    // 3. Block everything else (prevent scraping other assets)
-    return res.status(403).send("Forbidden");
+    const body = await upstream.text();
+    return res.status(200).send(body);
   } catch (err) {
     console.error("Proxy error:", err);
     return res.status(500).send("Internal proxy error");
