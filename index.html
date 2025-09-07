@@ -6,7 +6,7 @@
   <title>C0D3X Zipper</title>
   <style>
     /* Loader styles */
-    #loader {
+    #loader_local {
       position: fixed;
       top: 0;
       left: 0;
@@ -22,30 +22,30 @@
       z-index: 9999;
     }
 
-    .spinner {
+    .spinner_local {
       border: 4px solid rgba(255,255,255,0.1);
       border-left-color: #00ff99;
       border-radius: 50%;
       width: 40px;
       height: 40px;
-      animation: spin 1s linear infinite;
+      animation: spin_local 1s linear infinite;
     }
 
-    @keyframes spin {
+    @keyframes spin_local {
       to { transform: rotate(360deg); }
     }
   </style>
 </head>
 <body>
-  <div id="loader">
-    <div class="spinner"></div>
+  <div id="loader_local">
+    <div class="spinner_local"></div>
   </div>
-  <div id="app"></div>
+  <div id="app_local"></div>
 
   <script>
     async function loadAssets() {
       try {
-        // Load CSS (proxied by Vercel, token added server-side)
+        // Load CSS
         const cssRes = await fetch("/api/fetch?file=style.css");
         if (!cssRes.ok) throw new Error("CSS fetch failed");
         const cssText = await cssRes.text();
@@ -57,7 +57,7 @@
         const htmlRes = await fetch("/api/fetch?file=index.html");
         if (!htmlRes.ok) throw new Error("HTML fetch failed");
         const htmlText = await htmlRes.text();
-        document.getElementById("app").innerHTML = htmlText;
+        document.getElementById("app_local").innerHTML = htmlText;
 
         // Load JS
         const jsRes = await fetch("/api/fetch?file=script.js");
@@ -67,11 +67,11 @@
         script.textContent = jsText;
         document.body.appendChild(script);
       } catch (err) {
-        document.getElementById("app").innerHTML =
+        document.getElementById("app_local").innerHTML =
           `<p style="color:red">Failed to load app: ${err.message}</p>`;
       } finally {
         // Hide loader
-        document.getElementById("loader").style.display = "none";
+        document.getElementById("loader_local").style.display = "none";
       }
     }
 
