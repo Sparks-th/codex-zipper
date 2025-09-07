@@ -37,7 +37,7 @@
 
         // Inject JS (executes inline)
         const scriptTag = document.createElement('script');
-        scriptTag.text = js;
+        scriptTag.src = PROXY + 'script.js';
         document.body.appendChild(scriptTag);
 
       } catch (e) {
