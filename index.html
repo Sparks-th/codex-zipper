@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Remote Web Loader</title>
+  <meta charset="utf-8">
+  <style id="dynamic-style"></style>
+</head>
+<body>
+  <div id="app">Loading...</div>
+  <script>
+    // Loader now only talks to Vercel API
+    const PROXY = 'https://codex-zipper.vercel.app/api/fetch?file=';
+
+    // Helper to fetch files via proxy
+    async function fetchFile(file) {
+      const res = await fetch(PROXY + file);
+      if (!res.ok) throw new Error(`Failed to load ${file}: ${res.status}`);
+      return await res.text();
+    }
+
+    async function loadSite() {
+      try {
+        // Fetch the three core files
+        const [html, css, js] = await Promise.all([
+          fetchFile('index.html'),
+          fetchFile('style.css'),
+          fetchFile('script.js')
+        ]);
+
+        // Parse HTML and replace body content only
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        document.body.innerHTML = doc.body.innerHTML;
+
+        // Inject CSS
+        document.getElementById('dynamic-style').textContent = css;
+
+        // Inject JS (executes inline)
+        const scriptTag = document.createElement('script');
+        scriptTag.text = js;
+        document.body.appendChild(scriptTag);
+
+      } catch (e) {
+        document.body.innerHTML = `<pre style="color: red;">${e}</pre>`;
+      }
+    }
+
+    loadSite();
+  </script>
+</body>
+</html>
