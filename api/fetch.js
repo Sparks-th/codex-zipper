@@ -1,46 +1,55 @@
 // /api/fetch.js
+import fetch from "node-fetch";
+
+const REMOTE_BASE = "http://129.213.89.30:3300"; // Your Python server
+const TOKEN = process.env.RAW_ACCESS_TOKEN;     // Vercel secret env
+
 export default async function handler(req, res) {
   try {
     const { file } = req.query;
+
+    // 1. If no file specified → serve index.html with injected assets
     if (!file) {
-      return res.status(400).send("Missing file parameter");
+      const upstream = await fetch(`${REMOTE_BASE}/index.html`);
+      let html = await upstream.text();
+
+      // Inject proxied script + style
+      html = html.replace(
+        "</head>",
+        `  <link rel="stylesheet" href="/api/fetch?file=style.css">
+  <script src="/api/fetch?file=script.js" defer></script>
+</head>`
+      );
+
+      res.setHeader("Content-Type", "text/html; charset=utf-8");
+      return res.status(200).send(html);
     }
 
-    // Remote Python file server
-    const REMOTE_BASE = "http://129.213.89.30:3300";
+    // 2. Only allow script.css / style.js through proxy with token
+    if (file === "script.js" || file === "style.css") {
+      const upstream = await fetch(`${REMOTE_BASE}/${file}`, {
+        headers: { "X-RAW-TOKEN": TOKEN }
+      });
 
-    // Secure header from Vercel environment
-    const RAW_ACCESS_TOKEN = process.env.RAW_ACCESS_TOKEN;
+      if (!upstream.ok) {
+        return res.status(upstream.status).send("Failed to fetch asset");
+      }
 
-    const targetUrl = `${REMOTE_BASE}/${file}`;
+      res.setHeader(
+        "Content-Type",
+        file.endsWith(".js")
+          ? "application/javascript; charset=utf-8"
+          : "text/css; charset=utf-8"
+      );
 
-    const response = await fetch(targetUrl, {
-      headers: {
-        "X-RAW-ACCESS": RAW_ACCESS_TOKEN,
-      },
-    });
-
-    if (!response.ok) {
-      return res.status(response.status).send("Upstream fetch failed");
+      const body = await upstream.text();
+      return res.status(200).send(body);
     }
 
-    // Detect file type and set correct headers
-    let contentType = "text/plain";
-    if (file.endsWith(".js")) {
-      contentType = "application/javascript; charset=utf-8";
-    } else if (file.endsWith(".css")) {
-      contentType = "text/css; charset=utf-8";
-    } else if (file.endsWith(".html")) {
-      contentType = "text/html; charset=utf-8";
-    }
-
-    res.setHeader("Content-Type", contentType);
-    res.setHeader("Cache-Control", "public, max-age=3600"); // cache 1hr
-
-    const body = await response.text();
-    res.send(body);
+    // 3. Block everything else (prevent scraping other assets)
+    return res.status(403).send("Forbidden");
   } catch (err) {
     console.error("Proxy error:", err);
-    res.status(500).send("Internal proxy error");
+    return res.status(500).send("Internal proxy error");
   }
 }
