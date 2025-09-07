@@ -1,48 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Remote Web Loader</title>
+  <title>Codex Zipper</title>
   <meta charset="utf-8">
-  <style id="dynamic-style"></style>
+  <link rel="stylesheet" href="/api/fetch?file=style.css">
 </head>
 <body>
   <div id="app">Loading...</div>
-  <script>
-    // CONFIG
-    const PROXY = '/api/fetch?file='; // your Vercel proxy endpoint
 
-    async function fetchRaw(file) {
-      const res = await fetch(PROXY + file);
-      if (!res.ok) throw new Error(`Failed to load ${file}: ${res.status}`);
-      return await res.text();
-    }
-
-    async function loadSite() {
-      try {
-        // Fetch HTML + CSS
-        const html = await fetchRaw('index.html');
-        const css = await fetchRaw('style.css');
-
-        // Inject HTML body
-        document.body.innerHTML = html;
-
-        // Inject CSS
-        const styleTag = document.getElementById('dynamic-style') || document.createElement('style');
-        styleTag.textContent = css;
-        document.head.appendChild(styleTag);
-
-        // Load script as external file
-        const scriptTag = document.createElement('script');
-        scriptTag.src = PROXY + 'script.js';
-        scriptTag.defer = true;
-        document.body.appendChild(scriptTag);
-
-      } catch (e) {
-        document.body.innerHTML = `<pre style="color:red;">${e}</pre>`;
-      }
-    }
-
-    loadSite();
-  </script>
+  <script src="/api/fetch?file=script.js"></script>
 </body>
 </html>
